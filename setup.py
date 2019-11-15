@@ -12,6 +12,8 @@ if 'publish' in sys.argv:
     os.system('python setup.py bdist_wheel upload')
     sys.exit()
 
+INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
+
 
 setup(
     name='piprot',
@@ -28,11 +30,7 @@ setup(
             'piprot = piprot.piprot:piprot',
         ]
     },
-    install_requires=[
-        'requests',
-        'requests-futures',
-        'six'
-    ],
+    install_requires=INSTALL_REQUIRES,
     classifiers=[
         'Intended Audience :: Developers',
         'Natural Language :: English',
