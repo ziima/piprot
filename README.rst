@@ -1,6 +1,3 @@
-NOTE: this package is no longer maintained. You can use ``pip list --outdated`` or ``pipenv update --outdated`` to show outdated packages (with a little less whimsy). 
-
-
 piprot
 ======
 
