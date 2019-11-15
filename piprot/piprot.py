@@ -318,10 +318,10 @@ def main(
 
             if latest and latest_version != specified_version:
                 print('{}=={}  # Updated from {}'.format(req, latest_version,
-                                                        specified_version))
+                                                         specified_version))
             elif verbatim and latest_version != specified_version:
                 print('{}=={}  # Latest {}'.format(req, specified_version,
-                                                  latest_version))
+                                                   latest_version))
             elif verbatim:
                 print('{}=={}'.format(req, specified_version))
 

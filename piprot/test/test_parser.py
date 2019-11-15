@@ -15,7 +15,7 @@ class TestRequirementsParser(unittest.TestCase):
         d = parse_req_file(f)
         self.assertTrue(d[0][0] == 'requests')
         self.assertTrue(d[0][1] == '1.2.3')
-        self.assertTrue(d[0][2] == False)
+        self.assertIs(d[0][2], False)
 
     def test_requirements_with_extra(self):
         f = StringIO("requests[security]==1.2.3")
