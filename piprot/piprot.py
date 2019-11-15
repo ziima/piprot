@@ -146,6 +146,12 @@ def parse_req_file(req_file, verbatim=False):
     return req_list
 
 
+def _verbose_print(verbose: bool, message: str, *args, **kwargs):
+    """Format and print message in verbose mode."""
+    if verbose:
+        print(message.format(*args, **kwargs))
+
+
 def get_version_and_release_date(requirement, version=None,
                                  verbose=False, response=None):
     """Given a requirement and optional version returns a (version, releasedate)
@@ -169,18 +175,12 @@ def get_version_and_release_date(requirement, version=None,
         response = response.json()
     except requests.HTTPError:
         if version:
-            if verbose:
-                print('{} ({}) isn\'t available on PyPI '
-                      'anymore!'.format(requirement, version))
+            _verbose_print(verbose, '{} ({}) isn\'t available on PyPI anymore!', requirement, version)
         else:
-            if verbose:
-                print('{} isn\'t on PyPI. Check that the project '
-                      'still exists!'.format(requirement))
+            _verbose_print(verbose, '{} isn\'t on PyPI. Check that the project still exists!', requirement)
         return None, None
     except ValueError:
-        if verbose:
-            print('Decoding the JSON response for {} ({}) '
-                  'failed'.format(requirement, version))
+        _verbose_print(verbose, 'Decoding the JSON response for {} ({}) failed', requirement, version)
         return None, None
 
     try:
@@ -216,9 +216,7 @@ def get_version_and_release_date(requirement, version=None,
             time.strptime(release_date, '%Y-%m-%dT%H:%M:%S')
         ))
     except IndexError:
-        if verbose:
-            print('{} ({}) didn\'t return a date property'.format(requirement,
-                                                                  version))
+        _verbose_print(verbose, '{} ({}) didn\'t return a date property', requirement, version)
         return None, None
 
 
@@ -306,16 +304,13 @@ def main(
             total_time_delta = total_time_delta + time_delta
             max_outdated_time = max(time_delta, max_outdated_time)
 
-            if verbose:
-                if time_delta > 0:
-                    print('{} ({}) is {} days out of date. '
-                          'Latest is {}'.format(req, version, time_delta,
-                                                latest_version))
-                elif version != latest_version:
-                    print('{} ({}) is out of date. '
-                          'Latest is {}'.format(req, version, latest_version))
-                elif not outdated:
-                    print('{} ({}) is up to date'.format(req, version))
+            if time_delta > 0:
+                _verbose_print(verbose, '{} ({}) is {} days out of date. Latest is {}',
+                               req, version, time_delta, latest_version)
+            elif version != latest_version:
+                _verbose_print(verbose, '{} ({}) is out of date. Latest is {}', req, version, latest_version)
+            elif not outdated:
+                _verbose_print(verbose, '{} ({}) is up to date', req, version)
 
             if latest and latest_version != specified_version:
                 print('{}=={}  # Updated from {}'.format(req, latest_version,
