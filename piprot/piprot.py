@@ -220,6 +220,30 @@ def get_version_and_release_date(requirement, version=None,
         return None, None
 
 
+def _print_summary(total_time_delta: int, delay: int, max_outdated_time: int, verbatim: bool):
+    """Print the piprot summary."""
+    verbatim_str = ""
+    if verbatim:
+        verbatim_str = "# Generated with piprot {}\n# ".format(VERSION)
+
+    if total_time_delta > 0 and delay is None:
+        print("{}Your requirements are {} "
+              "days out of date".format(verbatim_str, total_time_delta))
+        sys.exit(1)
+    elif delay is not None and max_outdated_time > int(delay):
+        print("{}At least one of your dependancies is {} "
+              "days out of date which is more than the allowed"
+              "{} days.".format(verbatim_str, max_outdated_time, delay))
+        sys.exit(1)
+    elif delay is not None and max_outdated_time <= int(delay):
+        print("{}All of your dependancies are at most {} "
+              "days out of date.".format(verbatim_str, delay))
+        sys.exit(1)
+    else:
+        print("{}Looks like you've been keeping up to date, "
+              "time for a delicious beverage!".format(verbatim_str))
+
+
 def main(
     req_files,
     verbose=False,
@@ -326,26 +350,7 @@ def main(
                 '{}=={}  # Error checking latest version'.format(req, version)
             )
 
-    verbatim_str = ""
-    if verbatim:
-        verbatim_str = "# Generated with piprot {}\n# ".format(VERSION)
-
-    if total_time_delta > 0 and delay is None:
-        print("{}Your requirements are {} "
-              "days out of date".format(verbatim_str, total_time_delta))
-        sys.exit(1)
-    elif delay is not None and max_outdated_time > int(delay):
-        print("{}At least one of your dependancies is {} "
-              "days out of date which is more than the allowed"
-              "{} days.".format(verbatim_str, max_outdated_time, delay))
-        sys.exit(1)
-    elif delay is not None and max_outdated_time <= int(delay):
-        print("{}All of your dependancies are at most {} "
-              "days out of date.".format(verbatim_str, delay))
-        sys.exit(1)
-    else:
-        print("{}Looks like you've been keeping up to date, "
-              "time for a delicious beverage!".format(verbatim_str))
+    _print_summary(total_time_delta, delay, max_outdated_time, verbatim)
 
 
 def piprot():
