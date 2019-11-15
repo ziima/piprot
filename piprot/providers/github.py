@@ -2,7 +2,7 @@
 functions to interact with github api
 """
 import requests
-from six import StringIO
+from io import StringIO
 import re
 import json
 
