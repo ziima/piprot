@@ -5,7 +5,6 @@ piprot - How rotten are your requirements?
 from __future__ import print_function
 
 import argparse
-import json
 import operator
 import os
 import re
@@ -18,7 +17,6 @@ from requests_futures.sessions import FuturesSession
 
 from . import __version__
 from .providers.github import build_github_url, get_requirements_file_from_url
-
 
 VERSION = __version__
 PYPI_BASE_URL = 'https://pypi.python.org/pypi'

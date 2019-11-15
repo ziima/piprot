@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import unittest
+
 from piprot.piprot import get_version_and_release_date
 
 

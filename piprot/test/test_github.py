@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import unittest
-import requests
 from io import StringIO
+
+import requests
 
 from piprot.piprot import parse_req_file
 from piprot.providers.github import build_github_url

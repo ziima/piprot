@@ -1,10 +1,11 @@
 """
 functions to interact with github api
 """
-import requests
-from io import StringIO
-import re
 import json
+import re
+from io import StringIO
+
+import requests
 
 GITHUB_API_BASE = 'https://api.github.com'
 
