@@ -11,6 +11,7 @@ import re
 import sys
 import time
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from requests_futures.sessions import FuturesSession
@@ -246,7 +247,7 @@ def main(
       old version in the comment)
     - delay specifies a timerange during an outdated package is allowed
     """
-    requirements = []
+    requirements = []  # type: List[Tuple[Optional[str], str, bool]]
 
     if repo:
         github_url = build_github_url(repo, branch, path, token)
@@ -263,7 +264,7 @@ def main(
     total_time_delta = 0
     max_outdated_time = 0
     session = FuturesSession()
-    results = []
+    results = []  # type: List[Union[str, Dict[str, Any]]]
 
     for req, version, ignore in requirements:
         if verbatim and not req:
