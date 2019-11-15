@@ -239,6 +239,25 @@ def _get_requirements(req_files: List, verbatim: bool, url: Optional[str], repo:
     return requirements
 
 
+def _build_results(requirements: List[Tuple[Optional[str], str, bool]],
+                   verbatim: bool) -> List[Union[str, Dict[str, Any]]]:
+    session = FuturesSession()
+    results = []  # type: List[Union[str, Dict[str, Any]]]
+
+    for req, version, ignore in requirements:
+        if verbatim and not req:
+            results.append(version)
+        elif req:
+            results.append({
+                'req': req,
+                'version': version,
+                'ignore': ignore,
+                'latest': session.get(get_pypi_url(req)),
+                'specified': session.get(get_pypi_url(req, version))
+            })
+    return results
+
+
 def _print_summary(total_time_delta: int, delay: int, max_outdated_time: int, verbatim: bool):
     """Print the piprot summary."""
     verbatim_str = ""
@@ -290,20 +309,9 @@ def main(
     """
     total_time_delta = 0
     max_outdated_time = 0
-    session = FuturesSession()
-    results = []  # type: List[Union[str, Dict[str, Any]]]
 
-    for req, version, ignore in _get_requirements(req_files, verbatim, url, repo, branch, path, token):
-        if verbatim and not req:
-            results.append(version)
-        elif req:
-            results.append({
-                'req': req,
-                'version': version,
-                'ignore': ignore,
-                'latest': session.get(get_pypi_url(req)),
-                'specified': session.get(get_pypi_url(req, version))
-            })
+    requirements = _get_requirements(req_files, verbatim, url, repo, branch, path, token)
+    results = _build_results(requirements, verbatim)
 
     for result in results:
         if isinstance(result, str):
