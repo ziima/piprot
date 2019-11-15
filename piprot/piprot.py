@@ -16,8 +16,6 @@ from datetime import datetime
 import requests
 from requests_futures.sessions import FuturesSession
 
-from six.moves import input
-
 from . import __version__
 from .providers.github import build_github_url, get_requirements_file_from_url
 

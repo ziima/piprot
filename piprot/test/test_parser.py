@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import unittest
-from six import StringIO
+from io import StringIO
 
 from piprot.piprot import parse_req_file
 
