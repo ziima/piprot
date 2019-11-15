@@ -220,6 +220,25 @@ def get_version_and_release_date(requirement, version=None,
         return None, None
 
 
+def _get_requirements(req_files: List, verbatim: bool, url: Optional[str], repo: Optional[str], branch: Optional[str],
+                      path: Optional[str], token: Optional[str]) -> List[Tuple[Optional[str], str, bool]]:
+    requirements = []  # type: List[Tuple[Optional[str], str, bool]]
+
+    if repo:
+        github_url = build_github_url(repo, branch, path, token)
+        req_file = get_requirements_file_from_url(github_url)
+        requirements.extend(parse_req_file(req_file))
+    elif url:
+        req_file = get_requirements_file_from_url(url)
+        requirements.extend(parse_req_file(req_file))
+    else:
+        for req_file in req_files:
+            requirements.extend(parse_req_file(req_file, verbatim=verbatim))
+            req_file.close()
+
+    return requirements
+
+
 def _print_summary(total_time_delta: int, delay: int, max_outdated_time: int, verbatim: bool):
     """Print the piprot summary."""
     verbatim_str = ""
@@ -269,26 +288,12 @@ def main(
       old version in the comment)
     - delay specifies a timerange during an outdated package is allowed
     """
-    requirements = []  # type: List[Tuple[Optional[str], str, bool]]
-
-    if repo:
-        github_url = build_github_url(repo, branch, path, token)
-        req_file = get_requirements_file_from_url(github_url)
-        requirements.extend(parse_req_file(req_file))
-    elif url:
-        req_file = get_requirements_file_from_url(url)
-        requirements.extend(parse_req_file(req_file))
-    else:
-        for req_file in req_files:
-            requirements.extend(parse_req_file(req_file, verbatim=verbatim))
-            req_file.close()
-
     total_time_delta = 0
     max_outdated_time = 0
     session = FuturesSession()
     results = []  # type: List[Union[str, Dict[str, Any]]]
 
-    for req, version, ignore in requirements:
+    for req, version, ignore in _get_requirements(req_files, verbatim, url, repo, branch, path, token):
         if verbatim and not req:
             results.append(version)
         elif req:
