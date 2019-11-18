@@ -92,7 +92,3 @@ class TestRequirementsParser(unittest.TestCase):
             d = parse_req_file(f, verbatim=True)
             comments = [x[1] for x in d if not x[0]]
             self.assertTrue('# Development Requirements\n' in comments)
-
-
-if __name__ == '__main__':
-    unittest.main()
