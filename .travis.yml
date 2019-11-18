@@ -11,3 +11,4 @@ install:
 
 script:
   - tox
+  - tox -e codecov
