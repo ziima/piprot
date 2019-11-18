@@ -13,6 +13,9 @@ if 'publish' in sys.argv:
     sys.exit()
 
 INSTALL_REQUIRES = open('requirements.txt').read().splitlines()
+EXTRAS_REQUIRE = {
+    'quality': ['isort', 'flake8', 'bandit', 'mypy', 'pydocstyle']
+}
 
 
 setup(
@@ -32,6 +35,7 @@ setup(
     },
     python_requires='~=3.5',
     install_requires=INSTALL_REQUIRES,
+    extras_require=EXTRAS_REQUIRE,
     classifiers=[
         'Intended Audience :: Developers',
         'Natural Language :: English',

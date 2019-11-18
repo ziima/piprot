@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import unittest
+
 from piprot.piprot import get_version_and_release_date
 
 
@@ -27,6 +28,7 @@ class TestFreshness(unittest.TestCase):
     def test_bad_version_number(self):
         v1, r1 = get_version_and_release_date('unidecode', '0.4.21')
         v1, r1 = get_version_and_release_date('unidecode', '0.04.21')
+
 
 if __name__ == '__main__':
     unittest.main()

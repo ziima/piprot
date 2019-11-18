@@ -1,24 +1,21 @@
 #!/usr/bin/env python
-"""
-piprot - How rotten are your requirements?
-"""
+"""Piprot - How rotten are your requirements?"""  # noqa: D400
 from __future__ import print_function
 
 import argparse
-import json
 import operator
 import os
 import re
 import sys
 import time
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from requests_futures.sessions import FuturesSession
 
 from . import __version__
 from .providers.github import build_github_url, get_requirements_file_from_url
-
 
 VERSION = __version__
 PYPI_BASE_URL = 'https://pypi.python.org/pypi'
@@ -86,9 +83,9 @@ def parse_version(version):
 
 
 def get_pypi_url(requirement, version=None, base_url=PYPI_BASE_URL):
-    """
-    Get the PyPI url for a given requirement and optional version number and
-    PyPI base URL. The default base url is 'https://pypi.python.org/pypi'
+    """Get the PyPI url for a given requirement and optional version number and PyPI base URL.
+
+    The default base url is 'https://pypi.python.org/pypi'
     """
     if version:
         return '{base}/{req}/{version}/json'.format(base=base_url,
@@ -99,9 +96,7 @@ def get_pypi_url(requirement, version=None, base_url=PYPI_BASE_URL):
 
 
 def parse_req_file(req_file, verbatim=False):
-    """Take a file and return a dict of (requirement, versions, ignore) based
-    on the files requirements specs.
-    """
+    """Take a file and return a dict of (requirement, versions, ignore) based on the files requirements specs."""
     req_list = []
     requirements = req_file.readlines()
     for requirement in requirements:
@@ -147,10 +142,17 @@ def parse_req_file(req_file, verbatim=False):
     return req_list
 
 
+def _verbose_print(verbose: bool, message: str, *args, **kwargs):
+    """Format and print message in verbose mode."""
+    if verbose:
+        print(message.format(*args, **kwargs))
+
+
 def get_version_and_release_date(requirement, version=None,
                                  verbose=False, response=None):
-    """Given a requirement and optional version returns a (version, releasedate)
-    tuple. Defaults to the latest version. Prints to stdout if verbose is True.
+    """Given a requirement and optional version returns a (version, releasedate) tuple.
+
+    Defaults to the latest version. Prints to stdout if verbose is True.
     Optional response argument is the response from PyPI to be used for
     asyncronous lookups.
     """
@@ -170,18 +172,12 @@ def get_version_and_release_date(requirement, version=None,
         response = response.json()
     except requests.HTTPError:
         if version:
-            if verbose:
-                print('{} ({}) isn\'t available on PyPI '
-                      'anymore!'.format(requirement, version))
+            _verbose_print(verbose, '{} ({}) isn\'t available on PyPI anymore!', requirement, version)
         else:
-            if verbose:
-                print('{} isn\'t on PyPI. Check that the project '
-                      'still exists!'.format(requirement))
+            _verbose_print(verbose, '{} isn\'t on PyPI. Check that the project still exists!', requirement)
         return None, None
     except ValueError:
-        if verbose:
-            print('Decoding the JSON response for {} ({}) '
-                  'failed'.format(requirement, version))
+        _verbose_print(verbose, 'Decoding the JSON response for {} ({}) failed', requirement, version)
         return None, None
 
     try:
@@ -217,10 +213,70 @@ def get_version_and_release_date(requirement, version=None,
             time.strptime(release_date, '%Y-%m-%dT%H:%M:%S')
         ))
     except IndexError:
-        if verbose:
-            print('{} ({}) didn\'t return a date property'.format(requirement,
-                                                                  version))
+        _verbose_print(verbose, '{} ({}) didn\'t return a date property', requirement, version)
         return None, None
+
+
+def _get_requirements(req_files: List, verbatim: bool, url: Optional[str], repo: Optional[str], branch: Optional[str],
+                      path: Optional[str], token: Optional[str]) -> List[Tuple[Optional[str], str, bool]]:
+    requirements = []  # type: List[Tuple[Optional[str], str, bool]]
+
+    if repo:
+        github_url = build_github_url(repo, branch, path, token)
+        req_file = get_requirements_file_from_url(github_url)
+        requirements.extend(parse_req_file(req_file))
+    elif url:
+        req_file = get_requirements_file_from_url(url)
+        requirements.extend(parse_req_file(req_file))
+    else:
+        for req_file in req_files:
+            requirements.extend(parse_req_file(req_file, verbatim=verbatim))
+            req_file.close()
+
+    return requirements
+
+
+def _build_results(requirements: List[Tuple[Optional[str], str, bool]],
+                   verbatim: bool) -> List[Union[str, Dict[str, Any]]]:
+    session = FuturesSession()
+    results = []  # type: List[Union[str, Dict[str, Any]]]
+
+    for req, version, ignore in requirements:
+        if verbatim and not req:
+            results.append(version)
+        elif req:
+            results.append({
+                'req': req,
+                'version': version,
+                'ignore': ignore,
+                'latest': session.get(get_pypi_url(req)),
+                'specified': session.get(get_pypi_url(req, version))
+            })
+    return results
+
+
+def _print_summary(total_time_delta: int, delay: int, max_outdated_time: int, verbatim: bool):
+    """Print the piprot summary."""
+    verbatim_str = ""
+    if verbatim:
+        verbatim_str = "# Generated with piprot {}\n# ".format(VERSION)
+
+    if total_time_delta > 0 and delay is None:
+        print("{}Your requirements are {} "
+              "days out of date".format(verbatim_str, total_time_delta))
+        sys.exit(1)
+    elif delay is not None and max_outdated_time > int(delay):
+        print("{}At least one of your dependancies is {} "
+              "days out of date which is more than the allowed"
+              "{} days.".format(verbatim_str, max_outdated_time, delay))
+        sys.exit(1)
+    elif delay is not None and max_outdated_time <= int(delay):
+        print("{}All of your dependancies are at most {} "
+              "days out of date.".format(verbatim_str, delay))
+        sys.exit(1)
+    else:
+        print("{}Looks like you've been keeping up to date, "
+              "time for a delicious beverage!".format(verbatim_str))
 
 
 def main(
@@ -236,8 +292,7 @@ def main(
     url=None,
     delay=None,
 ):
-    """Given a list of requirements files reports which requirements are out
-    of date.
+    """Given a list of requirements files reports which requirements are out of date.
 
     Everything is rather somewhat obvious:
     - verbose makes things a little louder
@@ -248,36 +303,11 @@ def main(
       old version in the comment)
     - delay specifies a timerange during an outdated package is allowed
     """
-    requirements = []
-
-    if repo:
-        github_url = build_github_url(repo, branch, path, token)
-        req_file = get_requirements_file_from_url(github_url)
-        requirements.extend(parse_req_file(req_file))
-    elif url:
-        req_file = get_requirements_file_from_url(url)
-        requirements.extend(parse_req_file(req_file))
-    else:
-        for req_file in req_files:
-            requirements.extend(parse_req_file(req_file, verbatim=verbatim))
-            req_file.close()
-
     total_time_delta = 0
     max_outdated_time = 0
-    session = FuturesSession()
-    results = []
 
-    for req, version, ignore in requirements:
-        if verbatim and not req:
-            results.append(version)
-        elif req:
-            results.append({
-                'req': req,
-                'version': version,
-                'ignore': ignore,
-                'latest': session.get(get_pypi_url(req)),
-                'specified': session.get(get_pypi_url(req, version))
-            })
+    requirements = _get_requirements(req_files, verbatim, url, repo, branch, path, token)
+    results = _build_results(requirements, verbatim)
 
     for result in results:
         if isinstance(result, str):
@@ -307,23 +337,20 @@ def main(
             total_time_delta = total_time_delta + time_delta
             max_outdated_time = max(time_delta, max_outdated_time)
 
-            if verbose:
-                if time_delta > 0:
-                    print('{} ({}) is {} days out of date. '
-                          'Latest is {}'.format(req, version, time_delta,
-                                                latest_version))
-                elif version != latest_version:
-                    print('{} ({}) is out of date. '
-                          'Latest is {}'.format(req, version, latest_version))
-                elif not outdated:
-                    print('{} ({}) is up to date'.format(req, version))
+            if time_delta > 0:
+                _verbose_print(verbose, '{} ({}) is {} days out of date. Latest is {}',
+                               req, version, time_delta, latest_version)
+            elif version != latest_version:
+                _verbose_print(verbose, '{} ({}) is out of date. Latest is {}', req, version, latest_version)
+            elif not outdated:
+                _verbose_print(verbose, '{} ({}) is up to date', req, version)
 
             if latest and latest_version != specified_version:
                 print('{}=={}  # Updated from {}'.format(req, latest_version,
-                                                        specified_version))
+                                                         specified_version))
             elif verbatim and latest_version != specified_version:
                 print('{}=={}  # Latest {}'.format(req, specified_version,
-                                                  latest_version))
+                                                   latest_version))
             elif verbatim:
                 print('{}=={}'.format(req, specified_version))
 
@@ -332,32 +359,11 @@ def main(
                 '{}=={}  # Error checking latest version'.format(req, version)
             )
 
-    verbatim_str = ""
-    if verbatim:
-        verbatim_str = "# Generated with piprot {}\n# ".format(VERSION)
-
-    if total_time_delta > 0 and delay is None:
-        print("{}Your requirements are {} "
-              "days out of date".format(verbatim_str, total_time_delta))
-        sys.exit(1)
-    elif delay is not None and max_outdated_time > int(delay):
-        print("{}At least one of your dependancies is {} "
-              "days out of date which is more than the allowed"
-              "{} days.".format(verbatim_str, max_outdated_time, delay))
-        sys.exit(1)
-    elif delay is not None and max_outdated_time <= int(delay):
-        print("{}All of your dependancies are at most {} "
-              "days out of date.".format(verbatim_str, delay))
-        sys.exit(1)
-    else:
-        print("{}Looks like you've been keeping up to date, "
-              "time for a delicious beverage!".format(verbatim_str))
+    _print_summary(total_time_delta, delay, max_outdated_time, verbatim)
 
 
 def piprot():
-    """Parse the command line arguments and jump into the piprot() function
-    (unless the user just wants the post request hook).
-    """
+    """Parse the command line arguments and jump into the piprot function."""
     cli_parser = argparse.ArgumentParser(
         epilog="Here's hoping your requirements are nice and fresh!"
     )
