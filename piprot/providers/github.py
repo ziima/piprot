@@ -1,6 +1,4 @@
-"""
-functions to interact with github api
-"""
+"""Functions to interact with github API."""
 import json
 import re
 from io import StringIO
@@ -16,10 +14,7 @@ def build_github_url(
     path='requirements.txt',
     token=None
 ):
-    """
-    Builds a URL to a file inside a Github repository.
-    """
-
+    """Builds a URL to a file inside a Github repository."""
     repo = re.sub(r"^http(s)?://github.com/", "", repo).strip('/')
 
     # args come is as 'None' instead of not being provided
@@ -40,7 +35,7 @@ def build_github_url(
 
 
 def get_default_branch(repo):
-    """returns the name of the default branch of the repo"""
+    """Returns the name of the default branch of the repo."""
     url = "{}/repos/{}".format(GITHUB_API_BASE, repo)
     response = requests.get(url)
     if response.status_code == 200:
@@ -51,7 +46,7 @@ def get_default_branch(repo):
 
 
 def get_requirements_file_from_url(url):
-    """fetches the requiremets from the url"""
+    """Fetches the requiremets from the url."""
     response = requests.get(url)
 
     if response.status_code == 200:

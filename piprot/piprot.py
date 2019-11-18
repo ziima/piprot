@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-piprot - How rotten are your requirements?
-"""
+"""Piprot - How rotten are your requirements?"""  # noqa: D400
 from __future__ import print_function
 
 import argparse
@@ -85,9 +83,9 @@ def parse_version(version):
 
 
 def get_pypi_url(requirement, version=None, base_url=PYPI_BASE_URL):
-    """
-    Get the PyPI url for a given requirement and optional version number and
-    PyPI base URL. The default base url is 'https://pypi.python.org/pypi'
+    """Get the PyPI url for a given requirement and optional version number and PyPI base URL.
+
+    The default base url is 'https://pypi.python.org/pypi'
     """
     if version:
         return '{base}/{req}/{version}/json'.format(base=base_url,
@@ -98,9 +96,7 @@ def get_pypi_url(requirement, version=None, base_url=PYPI_BASE_URL):
 
 
 def parse_req_file(req_file, verbatim=False):
-    """Take a file and return a dict of (requirement, versions, ignore) based
-    on the files requirements specs.
-    """
+    """Take a file and return a dict of (requirement, versions, ignore) based on the files requirements specs."""
     req_list = []
     requirements = req_file.readlines()
     for requirement in requirements:
@@ -154,8 +150,9 @@ def _verbose_print(verbose: bool, message: str, *args, **kwargs):
 
 def get_version_and_release_date(requirement, version=None,
                                  verbose=False, response=None):
-    """Given a requirement and optional version returns a (version, releasedate)
-    tuple. Defaults to the latest version. Prints to stdout if verbose is True.
+    """Given a requirement and optional version returns a (version, releasedate) tuple.
+
+    Defaults to the latest version. Prints to stdout if verbose is True.
     Optional response argument is the response from PyPI to be used for
     asyncronous lookups.
     """
@@ -295,8 +292,7 @@ def main(
     url=None,
     delay=None,
 ):
-    """Given a list of requirements files reports which requirements are out
-    of date.
+    """Given a list of requirements files reports which requirements are out of date.
 
     Everything is rather somewhat obvious:
     - verbose makes things a little louder
@@ -367,9 +363,7 @@ def main(
 
 
 def piprot():
-    """Parse the command line arguments and jump into the piprot() function
-    (unless the user just wants the post request hook).
-    """
+    """Parse the command line arguments and jump into the piprot function."""
     cli_parser = argparse.ArgumentParser(
         epilog="Here's hoping your requirements are nice and fresh!"
     )
