@@ -1,8 +1,33 @@
 #!/usr/bin/env python
-"""Piprot - How rotten are your requirements?"""  # noqa: D400
+"""Piprot - How rotten are your requirements?
+
+Usage: piprot [options] [<file>...]
+       piprot -h | --help
+       piprot --version
+
+Positional arguments:
+  file                  requirements file(s), use `-` for stdin
+
+Options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  -v, --verbose         verbosity, can be supplied more than once (enabled by default, use --quiet to disable)
+  -q, --quiet           be a little less verbose with the output (<0.3 behaviour)
+  -l, --latest          print the lastest available version for out of date requirements
+  -x, --verbatim        output the full requirements file, with added comments with potential updates
+  -o, --outdated        only list outdated requirements
+  -g, --github=GITHUB   Test the requirements from a GitHub repo. Requires that a `requirements.txt` file exists in
+                        the root of the repository.
+  -b, --branch=BRANCH   The branch to test requirements from, used with the Github URL support.
+  -t, --token=TOKEN     Github personal access token to be used with the Github URL support.
+  -p, --path=PATH       Path to requirements file in remote repository.
+  -d, --delay=DELAY     Delay before an outdated package triggers an error in days [default: 1].
+  -u, --url=URL         URL to requirements file.
+
+Here's hoping your requirements are nice and fresh!
+"""  # noqa: D400
 from __future__ import print_function
 
-import argparse
 import operator
 import os
 import re
@@ -12,6 +37,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
+from docopt import docopt
 from requests_futures.sessions import FuturesSession
 
 from . import __version__
@@ -364,90 +390,33 @@ def main(
 
 def piprot():
     """Parse the command line arguments and jump into the piprot function."""
-    cli_parser = argparse.ArgumentParser(
-        epilog="Here's hoping your requirements are nice and fresh!"
-    )
-    cli_parser.add_argument(
-        '-v', '--verbose', action='store_true',
-        help='verbosity, can be supplied more than once '
-             '(enabled by default, use --quiet to disable)'
-    )
-    cli_parser.add_argument('-l', '--latest', action='store_true',
-                            help='print the lastest available version for out '
-                                 'of date requirements')
-    cli_parser.add_argument('-x', '--verbatim', action='store_true',
-                            help='output the full requirements file, with '
-                                 'added comments with potential updates')
-    cli_parser.add_argument('-q', '--quiet', action='store_true',
-                            help='be a little less verbose with the output '
-                                 '(<0.3 behaviour)')
-    cli_parser.add_argument('-o', '--outdated', action='store_true',
-                            help='only list outdated requirements')
+    options = docopt(__doc__, version=__version__)
 
-    cli_parser.add_argument('-g', '--github',
-                            help='Test the requirements from a GitHub repo. '
-                                 'Requires that a `requirements.txt` file '
-                                 'exists in the root of the repository.')
-
-    cli_parser.add_argument(
-        '-b', '--branch',
-        help='The branch to test requirements from, used with '
-             'the Github URL support.')
-
-    cli_parser.add_argument(
-        '-t', '--token',
-        help='Github personal access token to be used with '
-             'the Github URL support.')
-
-    cli_parser.add_argument(
-        '-p', '--path',
-        help='Path to requirements file in remote repository.')
-
-    cli_parser.add_argument(
-        '-d', '--delay',
-        help='Delay before an outdated package triggers an error.'
-             '(in days, default to 1).')
-
-    cli_parser.add_argument('-u', '--url',
-                            help='URL to requirements file.')
-
-    # if there is a requirements.txt file, use it by default. Otherwise print
-    # usage if there are no arguments.
-    nargs = '+'
-
-    if (
-        '--github' in sys.argv
-        or '-g' in sys.argv
-        or '-u' in sys.argv
-        or '--url' in sys.argv
-    ):
-        nargs = "*"
-
-    default = None
-    if os.path.isfile('requirements.txt'):
-        nargs = "*"
-        default = [open('requirements.txt')]
-
-    cli_parser.add_argument('file', nargs=nargs, type=argparse.FileType(),
-                            default=default, help='requirements file(s), use '
-                                                  '`-` for stdin')
-
-    cli_args = cli_parser.parse_args()
-
-    if len(cli_args.file) > 1 and cli_args.verbatim:
+    if options['<file>'] and options['--verbatim']:
         sys.exit('--verbatim only allowed for single requirements files')
 
     verbose = True
-    if cli_args.quiet:
+    if options['--quiet']:
         verbose = False
-    elif cli_args.verbatim:
+    elif options['--verbatim']:
         verbose = False
 
+    req_files = []
+    for filename in options['<file>']:
+        if options['<file>'] == ['-']:
+            req_files.append(sys.stdin)
+        else:
+            req_files.append(open(filename))
+    else:
+        if not options['--github'] and not options['--url']:
+            # No source provided, read from stdin.
+            req_files.append(sys.stdin)
+
     # call the main function to kick off the real work
-    main(req_files=cli_args.file, verbose=verbose, outdated=cli_args.outdated,
-         latest=cli_args.latest, verbatim=cli_args.verbatim,
-         repo=cli_args.github, branch=cli_args.branch, path=cli_args.path,
-         token=cli_args.token, url=cli_args.url, delay=cli_args.delay)
+    main(req_files=req_files, verbose=verbose, outdated=options['--outdated'],
+         latest=options['--latest'], verbatim=options['--verbatim'],
+         repo=options['--github'], branch=options['--branch'], path=options['--path'],
+         token=options['--token'], url=options['--url'], delay=options['--delay'])
 
 
 if __name__ == '__main__':
